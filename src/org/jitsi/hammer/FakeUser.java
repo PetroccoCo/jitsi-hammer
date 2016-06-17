@@ -51,7 +51,7 @@ import java.util.*;
  * to the videobridge.
  *
  */
-public class FakeUser implements PacketListener
+public class FakeUser implements PacketListener, StanzaListener
 {
     /**
      * The <tt>Logger</tt> used by the <tt>FakeUser</tt> class and its
@@ -99,7 +99,7 @@ public class FakeUser implements PacketListener
     /**
      * The object use to connect to and then communicate with the XMPP server.
      */
-    private XMPPConnection connection;
+    private XMPPBOSHConnection connection;
 
     /**
      * The object use to connect to and then send message to the MUC chatroom.
@@ -225,22 +225,17 @@ public class FakeUser implements PacketListener
         this.conferenceInfo = hammer.getConferenceInfo();
         fakeUserStats = statisticsEnabled ? new FakeUserStats(nickname) : null;
 
-        config = new BOSHConfiguration(
-                serverInfo.getUseHTTPS(),
-                serverInfo.getBOSHhostname(),
-                serverInfo.getPort(),
-                serverInfo.getBOSHpath(),
-                serverInfo.getXMPPDomain());
-        config.setDebuggerEnabled(smackDebug);
+        config = BOSHConfiguration.builder()
+                .setUseHttps(serverInfo.getUseHTTPS())
+                .setHost(serverInfo.getBOSHhostname())
+                .setPort(serverInfo.getPort())
+                .setResource(serverInfo.getBOSHpath())
+                .setServiceName(serverInfo.getXMPPDomain())
+                .setDebuggerEnabled(smackDebug)
+                .build();
 
         connection = new XMPPBOSHConnection(config);
-        connection.addPacketListener(this,new PacketFilter()
-        {
-            public boolean accept(Packet packet)
-            {
-                return (packet instanceof JingleIQ);
-            }
-        });
+        connection.addAsyncStanzaListener(this, new StanzaExtensionFilter(JingleIQ.ELEMENT_NAME, JingleIQ.NAMESPACE));
 
         /*
          * Creation in advance of the MediaStream that will be used later
@@ -284,7 +279,7 @@ public class FakeUser implements PacketListener
     {
         logger.info(this.nickname + " : Login anonymously to the XMPP server.");
         connection.connect();
-        connection.loginAnonymously();
+        connection.login();
         connectMUC();
     }
 
@@ -326,7 +321,7 @@ public class FakeUser implements PacketListener
         ConferenceInitiationIQ conferenceInitiationIQ 
                 = new ConferenceInitiationIQ();
         conferenceInitiationIQ.setTo(this.getFocusJID());
-        conferenceInitiationIQ.setType(IQ.Type.SET);
+        conferenceInitiationIQ.setType(IQ.Type.set);
         conferenceInitiationIQ.setServerInfo(serverInfo);
         conferenceInitiationIQ.addConferenceProperty(
                 new ConferencePropertyPacketExtension(
@@ -385,7 +380,7 @@ public class FakeUser implements PacketListener
     {
         String roomURL = serverInfo.getRoomURL();
         logger.info(this.nickname + " : Trying to connect to MUC " + roomURL);
-        muc = new MultiUserChat(connection, roomURL);
+        muc = MultiUserChatManager.getInstanceFor(connection).getMultiUserChat(roomURL);
         while(true)
         {
             try
@@ -398,10 +393,10 @@ public class FakeUser implements PacketListener
                  * Send a Presence packet containing a Nick extension so that the
                  * nickname is correctly displayed in jitmeet
                  */
-                Packet presencePacket = new Presence(Presence.Type.available);
+                Stanza presencePacket = new Presence(Presence.Type.available);
                 presencePacket.setTo(roomURL + "/" + nickname);
                 presencePacket.addExtension(new Nick(nickname));
-                connection.sendPacket(presencePacket);
+                connection.sendStanza(presencePacket);
 
                 /**
                  * Make an attempt to send an IQ to Focus user 
@@ -676,7 +671,7 @@ public class FakeUser implements PacketListener
          * It seems like Jitsi Meet can work arround this error,
          * but better safe than sorry.
          */
-        Packet presencePacketWithSSRC = new Presence(Presence.Type.available);
+        Stanza presencePacketWithSSRC = new Presence(Presence.Type.available);
         String recipient =
             serverInfo.getRoomName()
             +"@"
@@ -698,7 +693,7 @@ public class FakeUser implements PacketListener
 
         try
         {
-            connection.sendPacket(presencePacketWithSSRC);
+            connection.sendStanza(presencePacketWithSSRC);
 
             //Creation of a session-accept message
             sessionAccept = Smack4AwareJinglePacketFactory.createSessionAccept(
@@ -821,15 +816,13 @@ public class FakeUser implements PacketListener
         }
     }
 
-
-
     /**
      * Callback function used when a JingleIQ is received by the XMPP connector.
      * @param packet the packet received by the <tt>FakeUser</tt>
      */
-    public void processPacket(Packet packet)
-    {
-        JingleIQ jiq = (JingleIQ)packet;
+    @Override
+    public void processPacket(Stanza stanza) throws SmackException.NotConnectedException {
+        JingleIQ jiq = (JingleIQ)stanza;
         ackJingleIQ(jiq);
         switch(jiq.getAction())
         {
@@ -991,4 +984,5 @@ public class FakeUser implements PacketListener
     {
         return this.fakeUserStats;
     }
+
 }

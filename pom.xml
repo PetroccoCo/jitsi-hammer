@@ -23,25 +23,26 @@
             <artifactId>libjitsi</artifactId>
             <version>1.0-20160229.215705-102</version>
         </dependency>
+
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-core</artifactId>
-            <version>4.0.7</version>
+            <version>4.1.7</version>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-bosh</artifactId>
-            <version>4.0.7</version>
+            <version>4.1.7</version>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-extensions</artifactId>
-            <version>4.0.7</version>
+            <version>4.1.7</version>
         </dependency>
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-debug</artifactId>
-            <version>4.0.7</version>
+            <version>4.1.7</version>
         </dependency>
         <dependency>
             <groupId>args4j</groupId>

@@ -15,6 +15,8 @@
  */
 package net.java.sip.communicator.impl.protocol.jabber.extensions.jingle;
 
+import org.jivesoftware.smack.util.XmlStringBuilder;
+
 import java.util.*;
 
 /**
@@ -33,11 +35,11 @@ public class Smack4AwareJingleIQ extends JingleIQ {
      * 
      * @return XML representation of <tt>Collection<PacketExtension></tt>
      *         belonging to this <tt>IQ</tt>
-     */
     public String getExtensionsXML() {
         CharSequence xmlExtensionsRepresentation = super.getExtensionsXML();
         return xmlExtensionsRepresentation.toString();
     }
+     */
 
     /**
      * This exists since Smack4 do not have <tt>getExtensionsXML</tt> method
@@ -45,8 +47,8 @@ public class Smack4AwareJingleIQ extends JingleIQ {
      * for its return type, causing <tt>JingleIQ</tt> to throw 
      * <tt>AbstractMethodError</tt> when serializing a packet
      */
-    @Override
-    public String getChildElementXML()
+
+    public String getaChildElementXML()
     {
         StringBuilder bldr = new StringBuilder("<" + ELEMENT_NAME);
 

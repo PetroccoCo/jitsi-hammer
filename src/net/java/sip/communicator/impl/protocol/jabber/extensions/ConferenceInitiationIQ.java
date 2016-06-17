@@ -15,10 +15,14 @@
  */
 package net.java.sip.communicator.impl.protocol.jabber.extensions;
 
-import org.jitsi.hammer.utils.*;
-import org.jivesoftware.smack.packet.*;
+import org.jitsi.hammer.utils.HostInfo;
+import org.jivesoftware.smack.packet.ExtensionElement;
+import org.jivesoftware.smack.packet.IQ;
+import org.jivesoftware.smack.util.XmlStringBuilder;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * An <tt>IQ</tt> that represents a conference initiation info-query 
@@ -27,9 +31,18 @@ import java.util.*;
  *
  * @author Maksym Kulish
  */
-public class ConferenceInitiationIQ extends IQ 
+public class ConferenceInitiationIQ extends IQ implements ExtensionElement
 {
-    
+
+    public ConferenceInitiationIQ(HostInfo serverInfo, List<ConferencePropertyPacketExtension> conferencePropertyPacketExtensionList) {
+        super(ELEMENT_NAME, NAMESPACE);
+        this.serverInfo = serverInfo;
+        this.conferenceProperties = conferencePropertyPacketExtensionList;
+    }
+    public ConferenceInitiationIQ() {
+        super(ELEMENT_NAME, NAMESPACE);
+    }
+
     /**
      * The name of the "conference" XML element
      */
@@ -49,7 +62,6 @@ public class ConferenceInitiationIQ extends IQ
      * The name of the attribute that contains machine UID
      */
     public static final String MACHINE_UID_ATTR_NAME = "machine-uid";
-    
 
     /**
      * The <tt>HostInfo</tt> object associated with a particular 
@@ -90,20 +102,24 @@ public class ConferenceInitiationIQ extends IQ
      * 
      * @return the child element section of the IQ XML
      */
-    public StringBuilder getChildElementXML() 
-    {
+    @Override
+    protected IQChildElementXmlStringBuilder getIQChildElementBuilder(IQChildElementXmlStringBuilder xml) {
+        IQChildElementXmlStringBuilder stringBuilder = new IQChildElementXmlStringBuilder(this);
 
-        StringBuilder stringBuilder = new StringBuilder("<" + ELEMENT_NAME);
+//        StringBuilder stringBuilder = new StringBuilder("<" + ELEMENT_NAME);
 
-        stringBuilder.append(" xmlns='" + NAMESPACE + "'");
-        stringBuilder.append(" " + ROOM_ATTR_NAME + 
-                "='" + serverInfo.getRoomURL() + "'");
-        stringBuilder.append(" " + MACHINE_UID_ATTR_NAME + 
-                "='" + machineUID + "'");
+//        stringBuilder.append(" xmlns='" + NAMESPACE + "'");
+        stringBuilder.attribute(ROOM_ATTR_NAME, serverInfo.getRoomURL());
+//        stringBuilder.append(" " + ROOM_ATTR_NAME +
+//                "='" + serverInfo.getRoomURL() + "'");
+        stringBuilder.attribute(MACHINE_UID_ATTR_NAME, machineUID.toString());
+//        stringBuilder.append(" " + MACHINE_UID_ATTR_NAME +
+//                "='" + machineUID + "'");
         
         if (this.conferenceProperties.size() == 0)
         {
-            stringBuilder.append(" />");
+            stringBuilder.closeEmptyElement();
+//            stringBuilder.append(" />");
         }
         else
         {
@@ -120,7 +136,8 @@ public class ConferenceInitiationIQ extends IQ
         return stringBuilder;
         
     }
-    
+
+
     /**
      * Set the <tt>HostInfo</tt> associated with this Hammer instance
      *
@@ -130,5 +147,14 @@ public class ConferenceInitiationIQ extends IQ
     public void setServerInfo(HostInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
-    
+
+    @Override
+    public String getNamespace() {
+        return NAMESPACE;
+    }
+
+    @Override
+    public String getElementName() {
+        return ELEMENT_NAME;
+    }
 }
